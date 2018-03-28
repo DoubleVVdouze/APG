@@ -2,8 +2,8 @@
 // Created by DoubleVV on 12/02/2018.
 //
 
-#include <c++/cstdlib>
-#include <c++/cstdio>
+#include <cstdlib>
+#include <cstdio>
 #include "../Include/loader.hpp"
 
 void skipLine(FILE *fp)
