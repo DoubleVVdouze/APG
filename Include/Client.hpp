@@ -5,18 +5,22 @@
 #ifndef PROJETAPG_CLIENT_HPP
 #define PROJETAPG_CLIENT_HPP
 
-
 class Client {
 
 public:
-    Client(Serveur&, int);
+    explicit Client(int);
 
-    int getID();
+    void join();
+
+    int getID() const;
+    bool hasJoined() const;
+    int getServerID() const;
 
 private:
-    Serveur mServeur;
 
     int mID;
+    bool mHasJoined;
+    int mServeur;
 };
 
 

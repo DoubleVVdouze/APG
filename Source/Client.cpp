@@ -4,14 +4,26 @@
 
 #include "Client.hpp"
 
-#include <Serveur.hpp>
-
-Client::Client(Serveur& serveur, int id) :
-        mServeur(serveur),
-        mID(id) {
+Client::Client(int id) :
+        mID(id),
+        mHasJoined(false),
+        mServeur(0) {
 
 }
 
-int Client::getID() {
+void Client::join(){
+//    mServeur = server;
+    mHasJoined = true;
+}
+
+bool Client::hasJoined() const{
+    return mHasJoined;
+}
+
+int Client::getID() const{
     return mID;
+}
+
+int Client::getServerID() const{
+    return mServeur;
 }

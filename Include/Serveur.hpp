@@ -5,6 +5,7 @@
 #ifndef PROJETAPG_SERVEUR_HPP
 #define PROJETAPG_SERVEUR_HPP
 
+#include <vector>
 #include "Client.hpp"
 
 class Serveur {
@@ -12,10 +13,16 @@ class Serveur {
 public:
     Serveur(int, int);
 
-    void addClient(Client&);
+    void addClient(Client, int);
     void openServeur();
 
-    int getID();
+    int getID() const;
+    int getOpeningCost() const;
+    int getNbClient() const;
+    int getConnectionCost(int) const;
+    bool isOpen() const;
+    Client getClient(int) const;
+
 
 private:
     int mID;
@@ -24,6 +31,7 @@ private:
     bool mIsOpen;
 
     std::vector<Client> mListClient;
+    std::vector<int> mListClientCost;
 };
 
 

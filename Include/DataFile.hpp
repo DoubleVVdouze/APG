@@ -11,13 +11,13 @@
 
 class DataFile {
 public :
-    DataFile(std::string);
+    DataFile(std::string, std::vector<Serveur>&, std::vector<Client>&);
 
 public:
     Data* getFile();
 
 private:
-    void loadFile(std::string);
+    void loadFile(std::string, std::vector<Serveur>&, std::vector<Client>&);
 
 private:
     Data* file;
