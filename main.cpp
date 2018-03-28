@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <Client.hpp>
 #include <climits>
+#include <ctime>
 #include "Include/DataFile.hpp"
 
 typedef std::vector<Serveur> ListServer;
@@ -211,19 +212,30 @@ const ListServer algo(ListServer& listServer, const ListClient& listClient){
 }
 
 int main(){
+    for (int index = 1 ; index <= 10 ; index++) {
+        ListServer listServer;
+        ListServer O;
+        std::vector<Client> listClient;
 
-    ListServer listServer;
-    ListServer O;
-    std::vector<Client> listClient;
+        std::cout << "lancement de l'algo pour le fichier B1." << index << std::endl;
 
-    std::unique_ptr<DataFile> dataFile(new DataFile("Data/B/B1.1", listServer, listClient));
+        std::unique_ptr<DataFile> dataFile(new DataFile("Data/B/B1."+std::to_string(index), listServer, listClient));
 
-    O = algo(listServer, listClient);
+        clock_t begin = clock();
 
-    for(const Serveur& serveur : O){
-        std::cout << serveur.getID() << std::endl;
+        O = algoGlouton(listServer);
+
+        clock_t end = clock();
+        double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+
+        std::cout << "temps écoulé : " << elapsed_secs << "s" << std::endl;
+
+        for (const Serveur &serveur : O) {
+            std::cout << serveur.getID() << std::endl;
+        }
+
+        std::cout << "fin de l'algo pour le fichier B1." << index << std::endl << std::endl;
     }
-
     return 0;
 }
 
