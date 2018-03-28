@@ -22,6 +22,7 @@ public:
     int getConnectionCost(int) const;
     bool isOpen() const;
     Client getClient(int) const;
+    int getConnectionCostById(int) const;
 
 
 private:

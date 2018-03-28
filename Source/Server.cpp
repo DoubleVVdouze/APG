@@ -38,6 +38,16 @@ int Serveur::getConnectionCost(int client) const{
     return mListClientCost[client];
 }
 
+int Serveur::getConnectionCostById(int id) const{
+    int i = 0;
+    for(Client client : mListClient){
+        if(client.getID() == id){
+            return mListClientCost[i];
+        }
+        i++;
+    }
+}
+
 bool Serveur::isOpen() const {
     return mIsOpen;
 }

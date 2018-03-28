@@ -93,6 +93,121 @@ int connectionCost(Client client, ListServer listServer){
     return minimum;
 }
 
+int calculAlpha(ListServer O, ListClient S, int& joiningClient){
+    if(O.empty()){
+        return INT_MAX;
+    }
+
+    int index = 0;
+    int minimal = INT_MAX;
+
+    for(Serveur serveur : O){
+        index = 0;
+        for(Client client : S) {
+            if (minimal > serveur.getConnectionCost(client.getID())) {
+                minimal = serveur.getConnectionCost(client.getID());
+                joiningClient = index;
+            }
+            index++;
+        }
+    }
+
+    return minimal;
+}
+
+int calculBeta(ListServer& O, ListServer& listServer, ListClient& Y, ListClient& S, ListClient listClient, int& openingServeur){
+    Y.clear();
+
+    ListClient Ytmp;
+
+    std::vector<int> listCost;
+
+    int result;
+    int somme1 = 0;
+    int somme2 = 0;
+    int minimum = INT_MAX;
+    int ratio;
+    int test;
+
+    int i = 0;
+    bool isBestRatioFound = false;
+
+    std::vector<int> heap;
+
+    for(Serveur serveur : listServer) {
+        if (serveur.isOpen()) {
+            continue;
+        }
+
+        heap.clear();
+        listCost.clear();
+        Ytmp.clear();
+        i = 0;
+        somme1 = 0;
+        somme2 = 0;
+        test = 0;
+        result = 0;
+        isBestRatioFound = false;
+
+        result = 2 * serveur.getOpeningCost();
+
+        for (Client client : S) {
+            somme1 += std::max(0, connectionCost(serveur.getClient(client.getID()), O) -
+                                  serveur.getConnectionCostById(serveur.getClient(client.getID()).getID()));
+        }
+
+//        somme1 = std::max(0, somme1);
+
+        for (Client client : S) {
+            heap.push_back(serveur.getConnectionCostById(client.getID()));
+        }
+
+        std::make_heap(heap.begin(), heap.end());
+        std::sort_heap(heap.begin(), heap.end());
+
+        listCost.push_back(heap[0]);
+
+        ratio = result - somme1 + listCost[0];
+        i++;
+
+        while (!isBestRatioFound) {
+            listCost.push_back(heap[i]);
+
+            somme2 = 0;
+            for (int cost : listCost) {
+                somme2 += cost;
+            }
+
+            test = (result + somme2 - somme1) / listCost.size();
+
+            if (test < ratio) {
+                i++;
+                ratio = test;
+            }
+            else {
+                isBestRatioFound = true;
+                for (int cost : listCost) {
+                    for (Client client : listClient) {
+                        if (serveur.getConnectionCostById(client.getID()) == cost) {
+                            Ytmp.push_back(client);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        if(ratio < minimum){
+            minimum = ratio;
+            Y = Ytmp;
+            openingServeur = serveur.getID();
+//            std::cout << "serveur : " <<  serveur.getID() << std::endl;
+        }
+//        std::cout << "serveur : " <<  serveur.getID() << "  /  " << ratio << std::endl;
+
+    }
+    return minimum;
+}
+
 ListServer algoGloutonRatio(ListServer& listServer, const ListClient& listClient){
     ListClient S = listClient;
     ListClient Y;
@@ -101,8 +216,8 @@ ListServer algoGloutonRatio(ListServer& listServer, const ListClient& listClient
 
     std::vector<int> heap;
 
-    int alpha = INT_MAX;
-    int beta = INT_MAX;
+    int alpha = 0;
+    int beta = 0;
 
     int joiningClient = 0;
     int openingServeur = 0;
@@ -111,69 +226,9 @@ ListServer algoGloutonRatio(ListServer& listServer, const ListClient& listClient
 
     bool isBestRatioFound = false;
 
-    while(!S.empty()){
-        Y.clear();
-
-        /* Calcul d'alpha */
-        for(Client client : S){
-            for(Serveur serveur : O){
-                if(serveur.getConnectionCost(client.getID()) < alpha){
-                    alpha = serveur.getConnectionCost(client.getID());
-                    joiningClient = i;
-                }
-            }
-            i++;
-        }
-
-        /* Calcul de beta */
-        for(Serveur serveur : listServer){
-            if(!serveur.isOpen()){
-                ratio = 2 * serveur.getOpeningCost();
-
-                for(int client = 0; client < serveur.getNbClient(); client++){
-                    heap.push_back(serveur.getConnectionCost(client));
-                }
-
-                std::make_heap(heap.begin(), heap.end());
-                std::sort_heap(heap.begin(), heap.end());
-
-                for(int client = 0; client < serveur.getNbClient(); client++){
-                    if(serveur.getClient(client).hasJoined()){
-                        continue;
-                    }
-
-                    ratio -= std::max(0, connectionCost(serveur.getClient(client), O) - serveur.getConnectionCost(serveur.getClient(client).getID()));
-                }
-
-                i = 1;
-
-                while(!isBestRatioFound){
-                    if((ratio + heap[i-1])/i < beta && i < listClient.size()) {
-                        i++;
-                    }
-                    else{
-                        ratio = (ratio + heap[i-1])/i;
-
-                        for(int j = 0; j < i-1; j++){
-                            for(int k = 0; k < serveur.getNbClient(); k++){
-                                if(serveur.getConnectionCost(k) == heap[j]){
-                                    Ytmp.push_back(listClient[k]);
-                                }
-                            }
-                        }
-
-                        isBestRatioFound = true;
-                    }
-                }
-
-                if(ratio < beta){
-                    beta = ratio;
-                    Y = Ytmp;
-                    openingServeur = serveur.getID();
-                }
-
-            }
-        }
+    while(!(S.empty())){
+        alpha = calculAlpha(O, S, joiningClient);
+        beta = calculBeta(O, listServer, Y, S, listClient, openingServeur);
 
         if(alpha <= beta){
             S[joiningClient].join();
@@ -223,7 +278,7 @@ int main(){
 
         clock_t begin = clock();
 
-        O = algoGlouton(listServer);
+        O = algo(listServer, listClient);
 
         clock_t end = clock();
         double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
@@ -238,58 +293,3 @@ int main(){
     }
     return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
