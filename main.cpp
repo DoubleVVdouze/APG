@@ -8,6 +8,7 @@
 #include <iostream>
 #include <algorithm>
 #include <Client.hpp>
+#include <climits>
 #include "Include/DataFile.hpp"
 
 typedef std::vector<Serveur> ListServer;
