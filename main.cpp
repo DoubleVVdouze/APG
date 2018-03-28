@@ -2,11 +2,11 @@
 // Created by DoubleVV on 12/02/2018.
 //
 
-#include <c++/memory>
-#include <c++/vector>
+#include <memory>
+#include <vector>
 #include <Serveur.hpp>
-#include <c++/iostream>
-#include <c++/algorithm>
+#include <iostream>
+#include <algorithm>
 #include <Client.hpp>
 #include "Include/DataFile.hpp"
 
@@ -225,3 +225,58 @@ int main(){
 
     return 0;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
