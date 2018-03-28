@@ -4,21 +4,20 @@
 
 #include <memory>
 #include <vector>
-#include <Serveur.hpp>
+#include <Server.hpp>
 #include <iostream>
 #include <algorithm>
-#include <Client.hpp>
 #include <climits>
 #include <ctime>
 #include "Include/DataFile.hpp"
 
-typedef std::vector<Serveur> ListServer;
+typedef std::vector<Server> ListServer;
 typedef std::vector<Client> ListClient;
 
-ListServer getUnion(const ListServer& listServer, const Serveur& serveur){
-    ListServer tmp(listServer);
-    tmp.push_back(serveur);
-    return tmp;
+ListServer getUnion(const ListServer& listServer, const Server& server){
+    ListServer listWithUnion(listServer);
+    listWithUnion.push_back(server);
+    return listWithUnion;
 }
 
 int eval(const ListServer& listServer){
@@ -26,55 +25,55 @@ int eval(const ListServer& listServer){
         return INT_MAX;
     }
 
-    int somme = 0;
+    int sum = 0;
+    int minimalCost;
 
-    for(Serveur serveur : listServer){
-        somme += serveur.getOpeningCost();
+    for(Server server : listServer){
+        sum += server.getOpeningCost();
     }
 
     for(int i = 0; i < listServer.begin()->getNbClient(); i++){
-        int minimal = listServer[0].getOpeningCost();
+        minimalCost = listServer[0].getOpeningCost();
 
-        for(Serveur serveur : listServer){
-            if(minimal > serveur.getConnectionCost(i)){
-                minimal = serveur.getConnectionCost(i);
+        for(Server server : listServer){
+            if(minimalCost > server.getConnectionCost(i)){
+                minimalCost = server.getConnectionCost(i);
             }
         }
 
-        somme += minimal;
+        sum += minimalCost;
     }
 
-    return somme;
+    return sum;
 }
 
 ListServer algoGlouton(ListServer& listServer){
-    ListServer O;
+    ListServer openedServer;
     int i = 0;
-    int score = 0;
     bool isOver = false;
-    int minimal = 0;
+    int minimalScore = 0;
 
     while(!isOver){
-        minimal = eval(O);
+        minimalScore = eval(openedServer);
         isOver = true;
 
-        for(Serveur serveur : listServer){
-            if(eval(getUnion(O, serveur)) < minimal){
-                minimal = eval(getUnion(O, serveur));
-                i = serveur.getID();
+        for(Server server : listServer){
+            if(eval(getUnion(openedServer, server)) < minimalScore){
+                minimalScore = eval(getUnion(openedServer, server));
+                i = server.getID();
                 isOver = false;
             }
         }
 
         if(!isOver){
-            O.push_back(listServer[i]);
+            openedServer.push_back(listServer[i]);
             listServer[i].openServeur();
         }
     }
 
-    std::cout << eval(O) << std::endl;
+    std::cout << eval(openedServer) << std::endl;
 
-    return O;
+    return openedServer;
 }
 
 int connectionCost(Client client, ListServer listServer){
@@ -84,82 +83,77 @@ int connectionCost(Client client, ListServer listServer){
 
     int minimum = INT_MAX;
 
-    for(Serveur serveur : listServer){
-        if(serveur.getConnectionCost(client.getID()) < minimum){
-            minimum = serveur.getConnectionCost(client.getID());
+    for(Server &server : listServer){
+        if(server.getConnectionCost(client.getID()) < minimum){
+            minimum = server.getConnectionCost(client.getID());
         }
     }
 
     return minimum;
 }
 
-int calculAlpha(ListServer O, ListClient S, int& joiningClient){
-    if(O.empty()){
+int calculAlpha(ListServer openedServer, ListClient clientNotJoined, int& joiningClient){
+    if(openedServer.empty()){
         return INT_MAX;
     }
 
-    int index = 0;
-    int minimal = INT_MAX;
+    int serverIndex = 0;
+    int minimalScore = INT_MAX;
 
-    for(Serveur serveur : O){
-        index = 0;
-        for(Client client : S) {
-            if (minimal > serveur.getConnectionCost(client.getID())) {
-                minimal = serveur.getConnectionCost(client.getID());
-                joiningClient = index;
+    for(Server server : openedServer){
+        serverIndex = 0;
+        for(Client client : clientNotJoined) {
+            if (minimalScore > server.getConnectionCost(client.getID())) {
+                minimalScore = server.getConnectionCost(client.getID());
+                joiningClient = serverIndex;
             }
-            index++;
+            serverIndex++;
         }
     }
 
-    return minimal;
+    return minimalScore;
 }
 
-int calculBeta(ListServer& O, ListServer& listServer, ListClient& Y, ListClient& S, ListClient listClient, int& openingServeur){
-    Y.clear();
+int calculBeta(ListServer& openedServer, ListServer& listServer, ListClient& joiningClientList, ListClient& clientNotJoined, ListClient listClient, int& openingServeur){
+    joiningClientList.clear();
 
-    ListClient Ytmp;
+    ListClient joiningClientListOfMinimum;
 
     std::vector<int> listCost;
 
     int result;
-    int somme1 = 0;
-    int somme2 = 0;
-    int minimum = INT_MAX;
+    int sumOfClientJoining;
+    int sumOfClientConnections = 0;
+    int minimalCost = INT_MAX;
     int ratio;
-    int test;
+    int currentScore;
 
-    int i = 0;
+    int serverIndex = 0;
     bool isBestRatioFound = false;
 
     std::vector<int> heap;
 
-    for(Serveur serveur : listServer) {
-        if (serveur.isOpen()) {
+    for(Server& server : listServer) {
+        if (server.isOpen()) {
             continue;
         }
 
         heap.clear();
         listCost.clear();
-        Ytmp.clear();
-        i = 0;
-        somme1 = 0;
-        somme2 = 0;
-        test = 0;
-        result = 0;
+        joiningClientListOfMinimum.clear();
+        serverIndex = 0;
+        sumOfClientJoining = 0;
         isBestRatioFound = false;
 
-        result = 2 * serveur.getOpeningCost();
+        result = 2 * server.getOpeningCost();
 
-        for (Client client : S) {
-            somme1 += std::max(0, connectionCost(serveur.getClient(client.getID()), O) -
-                                  serveur.getConnectionCostById(serveur.getClient(client.getID()).getID()));
+        for (Client client : clientNotJoined) {
+            sumOfClientJoining += std::max(0, connectionCost(server.getClient(client.getID()), openedServer) -
+                                  server.getConnectionCostById(server.getClient(client.getID()).getID()));
         }
 
-//        somme1 = std::max(0, somme1);
-
-        for (Client client : S) {
-            heap.push_back(serveur.getConnectionCostById(client.getID()));
+        for (Client client : clientNotJoined) {
+            heap.push_back(server.getConnectionCostById(client.getID()));
         }
 
         std::make_heap(heap.begin(), heap.end());
@@ -167,52 +161,51 @@ int calculBeta(ListServer& O, ListServer& listServer, ListClient& Y, ListClient&
 
         listCost.push_back(heap[0]);
 
-        ratio = result - somme1 + listCost[0];
-        i++;
+        ratio = result - sumOfClientJoining + listCost[0];
+        serverIndex++;
 
         while (!isBestRatioFound) {
-            listCost.push_back(heap[i]);
+            listCost.push_back(heap[serverIndex]);
 
-            somme2 = 0;
+            sumOfClientConnections = 0;
             for (int cost : listCost) {
-                somme2 += cost;
+                sumOfClientConnections += cost;
             }
 
-            test = (result + somme2 - somme1) / listCost.size();
+            currentScore = (result + sumOfClientConnections - sumOfClientJoining) / (int)listCost.size();
 
-            if (test < ratio) {
-                i++;
-                ratio = test;
+            if (currentScore < ratio) {
+                serverIndex++;
+                ratio = currentScore;
             }
             else {
                 isBestRatioFound = true;
                 for (int cost : listCost) {
                     for (Client client : listClient) {
-                        if (serveur.getConnectionCostById(client.getID()) == cost) {
-                            Ytmp.push_back(client);
+                        if (server.getConnectionCostById(client.getID()) == cost) {
+                            joiningClientListOfMinimum.push_back(client);
                             break;
                         }
                     }
                 }
             }
         }
-        if(ratio < minimum){
-            minimum = ratio;
-            Y = Ytmp;
-            openingServeur = serveur.getID();
-//            std::cout << "serveur : " <<  serveur.getID() << std::endl;
+        if(ratio < minimalCost){
+            minimalCost = ratio;
+            joiningClientList = joiningClientListOfMinimum;
+            openingServeur = server.getID();
+//            std::cout << "server : " <<  server.getID() << std::endl;
         }
-//        std::cout << "serveur : " <<  serveur.getID() << "  /  " << ratio << std::endl;
+//        std::cout << "server : " <<  server.getID() << "  /  " << ratio << std::endl;
 
     }
-    return minimum;
+    return minimalCost;
 }
 
 ListServer algoGloutonRatio(ListServer& listServer, const ListClient& listClient){
-    ListClient S = listClient;
-    ListClient Y;
-    ListClient Ytmp;
-    ListServer O;
+    ListClient clientNotJoined = listClient;
+    ListClient joiningClientList;
+    ListServer openedServer;
 
     std::vector<int> heap;
 
@@ -221,40 +214,36 @@ ListServer algoGloutonRatio(ListServer& listServer, const ListClient& listClient
 
     int joiningClient = 0;
     int openingServeur = 0;
-    int i = 0;
-    int ratio = 0;
 
-    bool isBestRatioFound = false;
-
-    while(!(S.empty())){
-        alpha = calculAlpha(O, S, joiningClient);
-        beta = calculBeta(O, listServer, Y, S, listClient, openingServeur);
+    while(!(clientNotJoined.empty())){
+        alpha = calculAlpha(openedServer, clientNotJoined, joiningClient);
+        beta = calculBeta(openedServer, listServer, joiningClientList, clientNotJoined, listClient, openingServeur);
 
         if(alpha <= beta){
-            S[joiningClient].join();
-            S.erase(S.begin()+joiningClient);
+            clientNotJoined[joiningClient].join();
+            clientNotJoined.erase(clientNotJoined.begin()+joiningClient);
         }
         else{
-            for(auto client : Y){
-                for(auto it = S.begin(); it != S.end();){
-                    if(it->getID() == client.getID()){
-                        it = S.erase(it);
+            for(auto client : joiningClientList){
+                for(auto iterator = clientNotJoined.begin(); iterator != clientNotJoined.end();){
+                    if(iterator->getID() == client.getID()){
+                        iterator = clientNotJoined.erase(iterator);
                     }
                     else{
-                        it++;
+                        iterator++;
                     }
                 }
             }
 
             listServer[openingServeur].openServeur();
 
-            O.emplace_back(listServer[openingServeur]);
+            openedServer.emplace_back(listServer[openingServeur]);
         }
     }
 
-    std::cout << eval(O) << std::endl;
+    std::cout << eval(openedServer) << std::endl;
 
-    return O;
+    return openedServer;
 }
 
 ListServer algoGloutonRatioTas(const ListServer& listServer, const ListClient& listClient){
@@ -269,7 +258,7 @@ const ListServer algo(ListServer& listServer, const ListClient& listClient){
 int main(){
     for (int index = 1 ; index <= 10 ; index++) {
         ListServer listServer;
-        ListServer O;
+        ListServer openedServer;
         std::vector<Client> listClient;
 
         std::cout << "lancement de l'algo pour le fichier B1." << index << std::endl;
@@ -278,15 +267,15 @@ int main(){
 
         clock_t begin = clock();
 
-        O = algo(listServer, listClient);
+        openedServer = algo(listServer, listClient);
 
         clock_t end = clock();
         double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
 
         std::cout << "temps écoulé : " << elapsed_secs << "s" << std::endl;
 
-        for (const Serveur &serveur : O) {
-            std::cout << serveur.getID() << std::endl;
+        for (const Server &server : openedServer) {
+            std::cout << server.getID() << std::endl;
         }
 
         std::cout << "fin de l'algo pour le fichier B1." << index << std::endl << std::endl;

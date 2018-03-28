@@ -4,41 +4,41 @@
 
 #include <vector>
 
-#include "Serveur.hpp"
+#include "Server.hpp"
 
-Serveur::Serveur(int id, int openingCost):
+Server::Server(int id, int openingCost):
         mID(id),
         mOpeningCost(openingCost),
         mIsOpen(false) {
 
 }
 
-void Serveur::addClient(Client client, int clientConnectionCost) {
+void Server::addClient(Client client, int clientConnectionCost) {
     mListClient.emplace_back(client);
     mListClientCost.emplace_back(clientConnectionCost);
 }
 
-int Serveur::getID() const{
+int Server::getID() const{
     return mID;
 }
 
-void Serveur::openServeur(){
+void Server::openServeur(){
     mIsOpen = true;
 }
 
-int Serveur::getOpeningCost() const{
+int Server::getOpeningCost() const{
     return mOpeningCost;
 }
 
-int Serveur::getNbClient() const{
+int Server::getNbClient() const{
     return mListClient.size();
 }
 
-int Serveur::getConnectionCost(int client) const{
+int Server::getConnectionCost(int client) const{
     return mListClientCost[client];
 }
 
-int Serveur::getConnectionCostById(int id) const{
+int Server::getConnectionCostById(int id) const{
     int i = 0;
     for(Client client : mListClient){
         if(client.getID() == id){
@@ -48,11 +48,11 @@ int Serveur::getConnectionCostById(int id) const{
     }
 }
 
-bool Serveur::isOpen() const {
+bool Server::isOpen() const {
     return mIsOpen;
 }
 
-Client Serveur::getClient(int client) const {
+Client Server::getClient(int client) const {
     return mListClient[client];
 }
 

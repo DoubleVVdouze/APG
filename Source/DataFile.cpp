@@ -4,12 +4,12 @@
 
 #include <iostream>
 #include <loader.hpp>
-#include <Serveur.hpp>
+#include <Server.hpp>
 #include <bits/unique_ptr.h>
 #include <Client.hpp>
 #include "../Include/DataFile.hpp"
 
-DataFile::DataFile(std::string name, std::vector<Serveur>& listServer, std::vector<Client>& listClient) {
+DataFile::DataFile(std::string name, std::vector<Server>& listServer, std::vector<Client>& listClient) {
     std::cout << name << std::endl;
 
     loadFile(name, listServer, listClient);
@@ -19,11 +19,11 @@ Data* DataFile::getFile() {
     return file;
 }
 
-void DataFile::loadFile(std::string name, std::vector<Serveur>& listServer, std::vector<Client>& listClient) {
+void DataFile::loadFile(std::string name, std::vector<Server>& listServer, std::vector<Client>& listClient) {
     file = load_instance(name.c_str());
 
     for(int i = 1; i < file->facility_count + 1; i++){
-        Serveur s(i-1, file->opening_cost[i]);
+        Server s(i-1, file->opening_cost[i]);
         for(int j = 1; j < file->client_count + 1; j++){
             Client client(j-1);
             s.addClient(client, file->connection[i][j]);

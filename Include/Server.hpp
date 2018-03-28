@@ -8,10 +8,10 @@
 #include <vector>
 #include "Client.hpp"
 
-class Serveur {
+class Server {
 
 public:
-    Serveur(int, int);
+    Server(int, int);
 
     void addClient(Client, int);
     void openServeur();
