@@ -143,9 +143,10 @@ int calculBeta(ListServer& openedServer, ListServer& listServer, ListClient& joi
         joiningClientListOfMinimum.clear();
         serverIndex = 0;
         sumOfClientJoining = 0;
+        ratio = 0;
         isBestRatioFound = false;
 
-        result = 2 * server.getOpeningCost();
+        result = 1 * server.getOpeningCost();
 
         for (Client client : clientNotJoined) {
             sumOfClientJoining += std::max(0, connectionCost(server.getClient(client.getID()), openedServer) -
@@ -159,13 +160,15 @@ int calculBeta(ListServer& openedServer, ListServer& listServer, ListClient& joi
         std::make_heap(heap.begin(), heap.end());
         std::sort_heap(heap.begin(), heap.end());
 
-        listCost.push_back(heap[0]);
-
-        ratio = result - sumOfClientJoining + listCost[0];
-        serverIndex++;
-
         while (!isBestRatioFound) {
+            if(heap.empty()){
+                break;
+            }
+
             listCost.push_back(heap[serverIndex]);
+
+            ratio = result - sumOfClientJoining + listCost[serverIndex];
+            serverIndex++;
 
             sumOfClientConnections = 0;
             for (int cost : listCost) {
@@ -174,7 +177,7 @@ int calculBeta(ListServer& openedServer, ListServer& listServer, ListClient& joi
 
             currentScore = (result + sumOfClientConnections - sumOfClientJoining) / (int)listCost.size();
 
-            if (currentScore < ratio) {
+            if (currentScore < ratio && serverIndex > heap.size()) {
                 serverIndex++;
                 ratio = currentScore;
             }
